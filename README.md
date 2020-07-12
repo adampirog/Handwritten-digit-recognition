@@ -1,2 +1,1 @@
-# HWR
-Handwriting recognition app for digits
+# Machine learning models recognizing handwritten digits
