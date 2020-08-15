@@ -35,10 +35,12 @@ class WindowManager(ScreenManager):
         if(pic is None):
             return
         
+        self.main_window.main_panel.crop()
+        pic = self.main_window.main_panel.pil_image
         app = App.get_running_app()
         app.root.current = "second_window"
         app.root.transition.direction = 'left'
-        clear_image(pic)
+        self.second_window.second_panel.clear_and_plot(pic)
 
 
 class LineRectangle(Widget):
@@ -69,6 +71,12 @@ class SecondPanel(Widget):
     def _plot_init(self):
         self.ids.plot_field.clear_widgets()
         plt.clf()
+        self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
+        
+    def clear_and_plot(self, photo):
+        self.ids.plot_field.clear_widgets()
+        plt.clf()
+        clear_image(photo)
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
         
     def plot_test(self):
@@ -141,9 +149,9 @@ class MainPanel(Widget):
         self.display_pil_image()
         
         selection_x, selection_y = self.get_image_position()
-        self.drawing_field.selection.pos = (selection_x - 10, selection_y - 10)
-        self.drawing_field.selection.size[0] = self.ids.image.norm_image_size[0] + 20
-        self.drawing_field.selection.size[1] = self.ids.image.norm_image_size[1] + 20
+        self.drawing_field.selection.pos = (selection_x , selection_y )
+        self.drawing_field.selection.size[0] = self.ids.image.norm_image_size[0] 
+        self.drawing_field.selection.size[1] = self.ids.image.norm_image_size[1] 
            
     def display_pil_image(self):
         data = BytesIO()
