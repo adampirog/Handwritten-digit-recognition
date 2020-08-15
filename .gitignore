@@ -133,3 +133,11 @@ custom/.vscode/
 *.csv
 
 models/
+
+.vscode/
+
+GUI/
+
+photos/
+
+Untitled.ipynb

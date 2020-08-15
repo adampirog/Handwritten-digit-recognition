@@ -1,0 +1,93 @@
+#:kivy 1.0
+
+WindowManager:
+    MainWindow:
+    SecondWindow:
+
+<MainWindow>:
+    name: "main_window"
+    MainPanel:
+
+<SecondWindow>:
+    name: "second_window"
+
+    Button:
+        text: "Go Back"
+        on_release: 
+            app.root.current = "main_window"
+            app.root.transition.direction = 'right'
+
+<MainPanel>:
+
+    image: image
+    drawing_field: drawing_field
+
+    BoxLayout:
+        orientation: 'horizontal'
+        
+
+        DrawingField:
+            selection: selection
+            id: drawing_field
+
+            size_hint: None, None
+            size:  root.width * 0.7, root.height
+
+            Image:
+                size_hint: None, None
+                size:  root.width * 0.7, root.height
+                #source: 'GUI/demo.jpg'
+                id: image
+
+            LineRectangle:
+                id: selection
+                pos: root.width * 0.5 - 50, root.height * 0.5 - 25
+                
+                size: (100, 100)     
+                  
+        RelativeLayout:
+            size_hint: None, None
+            size:  root.width * 0.3, root.height
+
+            canvas.before:
+                Color:
+                    rgba: 0.24, 0.46, 0.89, 1
+                Rectangle:
+                    size:  root.width * 0.35, root.height
+
+            Button:
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .1}
+                text: "Submit"
+                
+                on_release: 
+                    app.root.current = "second_window"
+                    app.root.transition.direction = 'left'
+
+            Button:
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .7}
+                text: "Load image"
+                
+                on_release: 
+                    on_release: root.load()
+            
+            Button:
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .6}
+                text: "Crop image"
+                
+                on_release: 
+                    on_release: root.crop()
+                
+
+
+<LineRectangle>:
+    canvas.after:
+        Color:
+            rgb: 1, 0, 0
+        Line:
+            width: 1.75
+            rectangle: (self.x, self.y, self.width, self.height)
+    Label:
+        center: root.center
