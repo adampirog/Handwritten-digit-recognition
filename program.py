@@ -31,7 +31,14 @@ class WindowManager(ScreenManager):
         self.add_widget(self.second_window)
         
     def main_to_second(self):
-        self.second_window.second_panel.plot_test()
+        pic = self.main_window.main_panel.pil_image
+        if(pic is None):
+            return
+        
+        app = App.get_running_app()
+        app.root.current = "second_window"
+        app.root.transition.direction = 'left'
+        clear_image(pic)
 
 
 class LineRectangle(Widget):
@@ -234,11 +241,9 @@ class MainApp(App):
         return kv
 
 
-def clear_image(file_name, corner, box_side):
-    image = Image.open(file_name).convert('L')
-
-    box = (corner[0], corner[1], corner[0] + box_side, corner[1] + box_side)   
-    small = image.crop(box).resize((28, 28))
+def clear_image(image):
+  
+    small = image.convert('L').resize((28, 28))
     np_data = np.invert(np.reshape(small, (1, 784)))
     clean = np.where(np_data < 110, 0, np_data)
     
@@ -248,11 +253,12 @@ def clear_image(file_name, corner, box_side):
 
 
 def test():
-    file_name = 'photos/1.jpg'
-    corner = (105, 180)
-    side = 120
+    #file_name = 'photos/1.jpg'
+    #corner = (105, 180)
+    #side = 120
     
-    digit = clear_image(file_name, corner, side)
+    a = Image.open("photos/1.jpg")
+    digit = clear_image(a)
     
     scaler = joblib.load("models/scaler")
     model = joblib.load("models/forest.sav")
@@ -266,6 +272,6 @@ def main():
     MainApp().run()
     
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
     main()
     
