@@ -46,13 +46,12 @@ class MainPanel(Widget):
     def __init__(self, **kwargs):
         super(MainPanel, self).__init__(**kwargs)
         self.previous_images = []
-        self.pil_image = None
+        self.pil_image = Image.open("photos/2.jpg")     # None
     
     def show_file_dialog(self):
         root = tk.Tk()
         root.withdraw()
-        file_path = filedialog.askopenfilename(title="Select a file",
-                                               filetypes=(("jpg files", "*.jpg"), ("png files", "*.png"), ("jpeg files", "*.jepg"), ("all files", "*.*")))
+        file_path = filedialog.askopenfilename(title="Select a file", filetypes=(("Images", ".jpg .jpeg .png"), ("All files", "*.*")))
         
         return file_path
          
@@ -64,7 +63,7 @@ class MainPanel(Widget):
               
     def crop(self):
         if(self.pil_image is None):
-            return
+            return     
         
         image_x, image_y = self.get_image_position()
         selection_x, selection_y = self.drawing_field.selection.pos[0], self.drawing_field.selection.pos[1]
@@ -72,20 +71,24 @@ class MainPanel(Widget):
         
         window_height = Window.size[1]
         
+        # coordinate system root transformation from lower to upper right corner
         image_y = window_height - (image_y + self.ids.image.norm_image_size[1])
         selection_y = window_height - (selection_y + selection_size)
         
-        transformed_x = selection_x - image_x
-        transformed_y = selection_y - image_y
+        image_scale = self.pil_image.size[0] / self.ids.image.norm_image_size[0]
         
+        transformed_x = (selection_x - image_x) * image_scale
+        transformed_y = (selection_y - image_y) * image_scale
+        selection_size *= image_scale
+          
         self.pil_image = self.pil_image.crop((transformed_x, transformed_y, transformed_x + selection_size, transformed_y + selection_size))
         
         self.display_pil_image(self.pil_image)
         
         selection_x, selection_y = self.get_image_position()
         self.drawing_field.selection.pos = (selection_x - 10, selection_y - 10)
-        self.drawing_field.selection.size[0] += 20
-        self.drawing_field.selection.size[1] += 20
+        self.drawing_field.selection.size[0] = self.ids.image.norm_image_size[1] + 20
+        self.drawing_field.selection.size[1] = self.ids.image.norm_image_size[1] + 20
            
     def display_pil_image(self, photo):
         data = BytesIO()

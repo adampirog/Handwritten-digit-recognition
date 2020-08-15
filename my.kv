@@ -29,9 +29,11 @@ WindowManager:
             size:  root.width * 0.7, root.height
 
             Image:
-                size_hint: None, None
-                size:  root.width * 0.7, root.height
+                source: "photos/2.jpg"
                 id: image
+                size_hint: None, None
+                size: root.width * 0.7 * 0.8, root.height * 0.8
+                pos: root.width * 0.7 * 0.1, root.height * 0.1
 
             LineRectangle:
                 id: selection
@@ -99,9 +101,11 @@ WindowManager:
             size:  root.width * 0.7, root.height
 
             Image:
-                size_hint: None, None
-                size:  root.width * 0.7, root.height
                 id: image
+                size_hint: None, None
+                size: root.width * 0.7 * 0.8, root.height * 0.8
+                pos: root.width * 0.7 * 0.1, root.height * 0.1
+                
      
                   
         RelativeLayout:
