@@ -17,7 +17,7 @@ def draw_digit(digit):
     digit_image = digit.reshape(28, 28)
     plt.imshow(digit_image, cmap=matplotlib.cm.binary, interpolation="nearest")
     plt.axis("off")
-    #plt.show()
+    plt.show()
 
 
 def main():

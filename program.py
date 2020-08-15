@@ -1,5 +1,4 @@
-from training import preprocessing as prc
-import joblib
+#import joblib
 import numpy as np
 from kivy.core.window import Window
 
@@ -15,6 +14,7 @@ from tkinter import filedialog
 
 from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
 import matplotlib.pyplot as plt
+import matplotlib
 import random
 
 from kivy.core.image import Image as CoreImage
@@ -29,6 +29,9 @@ class WindowManager(ScreenManager):
         self.second_window = SecondWindow()
         self.add_widget(self.main_window)
         self.add_widget(self.second_window)
+        
+        #self.model = joblib.load("models/forest.sav")
+        #self.scaler = joblib.load("models/scaler")
         
     def main_to_second(self):
         pic = self.main_window.main_panel.pil_image
@@ -76,7 +79,7 @@ class SecondPanel(Widget):
     def clear_and_plot(self, photo):
         self.ids.plot_field.clear_widgets()
         plt.clf()
-        clear_image(photo)
+        clear_and_plot(photo)
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
         
     def plot_test(self):
@@ -149,7 +152,7 @@ class MainPanel(Widget):
         self.display_pil_image()
         
         selection_x, selection_y = self.get_image_position()
-        self.drawing_field.selection.pos = (selection_x , selection_y )
+        self.drawing_field.selection.pos = (selection_x, selection_y)
         self.drawing_field.selection.size[0] = self.ids.image.norm_image_size[0] 
         self.drawing_field.selection.size[1] = self.ids.image.norm_image_size[1] 
            
@@ -243,38 +246,24 @@ class DrawingField(Widget):
 class MainApp(App):
 
     def build(self):
-
-        kv = Builder.load_file("my.kv")
+        kv = Builder.load_file("design.kv")
         self.title = 'Hadwritten digit recognition'
         return kv
 
 
-def clear_image(image):
+def clear_and_plot(image):
   
     small = image.convert('L').resize((28, 28))
     np_data = np.invert(np.reshape(small, (1, 784)))
     clean = np.where(np_data < 110, 0, np_data)
     
-    prc.draw_digit(clean)
+    digit_image = clean.reshape(28, 28)
+    plt.imshow(digit_image, cmap=matplotlib.cm.binary, interpolation="nearest")
+    plt.axis("off")
     
     return clean
 
 
-def test():
-    #file_name = 'photos/1.jpg'
-    #corner = (105, 180)
-    #side = 120
-    
-    a = Image.open("photos/1.jpg")
-    digit = clear_image(a)
-    
-    scaler = joblib.load("models/scaler")
-    model = joblib.load("models/forest.sav")
-    
-    transformed = scaler.transform(digit)
-    print(model.predict(transformed))
-    
-    
 def main():
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
     MainApp().run()
