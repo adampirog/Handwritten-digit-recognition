@@ -8,7 +8,7 @@ from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, ScreenManager
-
+from kivy.config import Config
 
 import tkinter as tk
 from tkinter import filedialog
@@ -45,9 +45,15 @@ class MainPanel(Widget):
     
     def __init__(self, **kwargs):
         super(MainPanel, self).__init__(**kwargs)
-        self.previous_images = []
-        self.pil_image = Image.open("photos/2.jpg")     # None
-    
+        self.previous_image = None
+        self.pil_image = None
+        
+        self.move_speed = 5
+        self.size_increase = 5
+        
+        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
+         
     def show_file_dialog(self):
         root = tk.Tk()
         root.withdraw()
@@ -65,34 +71,37 @@ class MainPanel(Widget):
         if(self.pil_image is None):
             return     
         
+        self.previous_image = self.pil_image
+    
         image_x, image_y = self.get_image_position()
         selection_x, selection_y = self.drawing_field.selection.pos[0], self.drawing_field.selection.pos[1]
-        selection_size = self.drawing_field.selection.size[0]
+        selection_size_x, selection_size_y = self.drawing_field.selection.size[0], self.drawing_field.selection.size[1]
         
         window_height = Window.size[1]
         
         # coordinate system root transformation from lower to upper right corner
         image_y = window_height - (image_y + self.ids.image.norm_image_size[1])
-        selection_y = window_height - (selection_y + selection_size)
+        selection_y = window_height - (selection_y + selection_size_y)
         
         image_scale = self.pil_image.size[0] / self.ids.image.norm_image_size[0]
         
         transformed_x = (selection_x - image_x) * image_scale
         transformed_y = (selection_y - image_y) * image_scale
-        selection_size *= image_scale
+        selection_size_x *= image_scale
+        selection_size_y *= image_scale
           
-        self.pil_image = self.pil_image.crop((transformed_x, transformed_y, transformed_x + selection_size, transformed_y + selection_size))
+        self.pil_image = self.pil_image.crop((transformed_x, transformed_y, transformed_x + selection_size_x, transformed_y + selection_size_y))
         
-        self.display_pil_image(self.pil_image)
+        self.display_pil_image()
         
         selection_x, selection_y = self.get_image_position()
         self.drawing_field.selection.pos = (selection_x - 10, selection_y - 10)
-        self.drawing_field.selection.size[0] = self.ids.image.norm_image_size[1] + 20
+        self.drawing_field.selection.size[0] = self.ids.image.norm_image_size[0] + 20
         self.drawing_field.selection.size[1] = self.ids.image.norm_image_size[1] + 20
            
-    def display_pil_image(self, photo):
+    def display_pil_image(self):
         data = BytesIO()
-        photo.save(data, format='png')
+        self.pil_image.save(data, format='png')
         data.seek(0) 
         im = CoreImage(BytesIO(data.read()), ext='png')
         self.image.texture = im.texture 
@@ -104,7 +113,46 @@ class MainPanel(Widget):
             return
         
         self.pil_image = Image.open(file_name)
-        self.display_pil_image(self.pil_image)
+        self.display_pil_image()
+        
+    def _keyboard_closed(self):
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
+        self._keyboard = None
+
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        
+        if keycode[1] == 'right':
+            self.drawing_field.selection.size[0] += self.size_increase
+        elif keycode[1] == 'left':
+            self.drawing_field.selection.size[0] -= self.size_increase 
+        elif keycode[1] == 'up':
+            self.drawing_field.selection.size[1] += self.size_increase    
+        elif keycode[1] == 'down':
+            self.drawing_field.selection.size[1] -= self.size_increase
+        
+        elif keycode[1] == 'r':
+            if(self.previous_image is not None):
+                self.pil_image = self.previous_image
+                self.display_pil_image()
+        elif keycode[1] == '1':
+            self.pil_image = Image.open("photos/1.jpg")
+            self.display_pil_image()
+        elif keycode[1] == '2':
+            self.pil_image = Image.open("photos/2.jpg")
+            self.display_pil_image()
+                
+        elif keycode[1] in ['shift', 'rshift']:
+            self.move_speed *= 5
+            self.size_increase *= 5
+            
+        return True
+            
+    def _on_keyboard_up(self, keyboard, keycode):
+        if keycode[1] in ['shift', 'rshift']:
+            self.move_speed /= 5
+            self.size_increase /= 5
+        
+        return True
         
          
 class DrawingField(Widget):
@@ -116,9 +164,6 @@ class DrawingField(Widget):
         
         self.move_speed = 5
         self.size_increase = 5
-        
-        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
-        self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
 
     def on_touch_down(self, touch):
          
@@ -139,34 +184,6 @@ class DrawingField(Widget):
         self.selection.pos = touch.pos
         self.selection.pos[0] -= self.selection.size[0] / 2
         self.selection.pos[1] -= self.selection.size[1] / 2
-        
-    def _keyboard_closed(self):
-        self._keyboard.unbind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
-        self._keyboard = None
-
-    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        
-        if keycode[1] == 'right':
-            self.selection.pos[0] += self.move_speed
-        elif keycode[1] == 'left':
-            self.selection.pos[0] -= self.move_speed 
-        elif keycode[1] == 'up':
-            self.selection.pos[1] += self.move_speed    
-        elif keycode[1] == 'down':
-            self.selection.pos[1] -= self.move_speed
-            
-        elif keycode[1] in ['shift', 'rshift']:
-            self.move_speed *= 5
-            self.size_increase *= 5
-            
-        return True
-            
-    def _on_keyboard_up(self, keyboard, keycode):
-        if keycode[1] in ['shift', 'rshift']:
-            self.move_speed /= 5
-            self.size_increase /= 5
-        
-        return True
 
 
 class MainApp(App):
@@ -204,6 +221,7 @@ def test():
     
     
 def main():
+    Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
     MainApp().run()
     
 
