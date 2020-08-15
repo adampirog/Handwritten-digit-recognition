@@ -9,13 +9,8 @@ WindowManager:
     MainPanel:
 
 <SecondWindow>:
-    name: "second_window"
-
-    Button:
-        text: "Go Back"
-        on_release: 
-            app.root.current = "main_window"
-            app.root.transition.direction = 'right'
+    name: "second_window" 
+    SecondPanel:
 
 <MainPanel>:
 
@@ -36,7 +31,6 @@ WindowManager:
             Image:
                 size_hint: None, None
                 size:  root.width * 0.7, root.height
-                #source: 'GUI/demo.jpg'
                 id: image
 
             LineRectangle:
@@ -89,5 +83,51 @@ WindowManager:
         Line:
             width: 1.75
             rectangle: (self.x, self.y, self.width, self.height)
-    Label:
-        center: root.center
+
+
+<SecondPanel>:
+    image: image
+
+    BoxLayout:
+        orientation: 'horizontal'
+        
+
+        DrawingField:
+            id: drawing_field
+
+            size_hint: None, None
+            size:  root.width * 0.7, root.height
+
+            Image:
+                size_hint: None, None
+                size:  root.width * 0.7, root.height
+                id: image
+     
+                  
+        RelativeLayout:
+            size_hint: None, None
+            size:  root.width * 0.3, root.height
+
+            canvas.before:
+                Color:
+                    rgba: 0.24, 0.46, 0.89, 1
+                Rectangle:
+                    size:  root.width * 0.35, root.height
+
+            Button:
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .2}
+                text: "Go back"
+                
+                on_release: 
+                    app.root.current = "main_window"
+                    app.root.transition.direction = 'right'
+
+            Button:
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .1}
+                text: "Submit"
+                
+                on_release: 
+                    app.root.current = "second_window"
+                    app.root.transition.direction = 'left'

@@ -1,6 +1,7 @@
 from training import preprocessing as prc
 import joblib
 import numpy as np
+from kivy.core.window import Window
 
 from kivy.app import App
 from kivy.uix.widget import Widget
@@ -8,7 +9,6 @@ from kivy.properties import ObjectProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, ScreenManager
 
-#from kivy.config import Config
 
 import tkinter as tk
 from tkinter import filedialog
@@ -16,11 +16,6 @@ from tkinter import filedialog
 from kivy.core.image import Image as CoreImage
 from PIL import Image
 from io import BytesIO
-
-#Config.set('graphics', 'width', '700')
-#Config.set('graphics', 'height', '700')
-
-from kivy.core.window import Window
 
 
 class WindowManager(ScreenManager):
@@ -39,6 +34,10 @@ class SecondWindow(Screen):
     pass
 
 
+class SecondPanel(Widget):
+    pass
+
+
 class MainPanel(Widget):
     
     image = ObjectProperty(None)
@@ -47,7 +46,7 @@ class MainPanel(Widget):
     def __init__(self, **kwargs):
         super(MainPanel, self).__init__(**kwargs)
         self.previous_images = []
-        self.pil_image = Image.open('GUI/demo.jpg')
+        self.pil_image = None
     
     def show_file_dialog(self):
         root = tk.Tk()
@@ -64,12 +63,20 @@ class MainPanel(Widget):
         return (X_POS, Y_POS)
               
     def crop(self):
+        if(self.pil_image is None):
+            return
         
         image_x, image_y = self.get_image_position()
+        selection_x, selection_y = self.drawing_field.selection.pos[0], self.drawing_field.selection.pos[1]
         selection_size = self.drawing_field.selection.size[0]
         
-        transformed_x = self.drawing_field.selection.pos[0] - image_x
-        transformed_y = self.drawing_field.selection.pos[1] - image_y
+        window_height = Window.size[1]
+        
+        image_y = window_height - (image_y + self.ids.image.norm_image_size[1])
+        selection_y = window_height - (selection_y + selection_size)
+        
+        transformed_x = selection_x - image_x
+        transformed_y = selection_y - image_y
         
         self.pil_image = self.pil_image.crop((transformed_x, transformed_y, transformed_x + selection_size, transformed_y + selection_size))
         
@@ -88,11 +95,13 @@ class MainPanel(Widget):
         self.image.texture = im.texture 
         
     def load(self):
-        
         file_name = (self.show_file_dialog())
-        if(file_name != ()):
-            self.pil_image = Image.open(file_name)
-            self.display_pil_image(self.pil_image)
+        
+        if(file_name == () or file_name == ""):
+            return
+        
+        self.pil_image = Image.open(file_name)
+        self.display_pil_image(self.pil_image)
         
          
 class DrawingField(Widget):
