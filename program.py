@@ -13,38 +13,77 @@ from kivy.config import Config
 import tkinter as tk
 from tkinter import filedialog
 
+from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
+import matplotlib.pyplot as plt
+import random
+
 from kivy.core.image import Image as CoreImage
 from PIL import Image
 from io import BytesIO
 
 
 class WindowManager(ScreenManager):
-    pass
+    def __init__(self, **kwargs):
+        super(WindowManager, self).__init__(**kwargs)
+        self.main_window = MainWindow()
+        self.second_window = SecondWindow()
+        self.add_widget(self.main_window)
+        self.add_widget(self.second_window)
+        
+    def main_to_second(self):
+        self.second_window.second_panel.plot_test()
 
 
 class LineRectangle(Widget):
     pass
-
+    
 
 class MainWindow(Screen):
-    pass
+    def __init__(self, **kwargs):
+        super(MainWindow, self).__init__(**kwargs)
+        self.main_panel = MainPanel()
+        self.add_widget(self.main_panel)
 
 
 class SecondWindow(Screen):
-    pass
+    def __init__(self, **kwargs):
+        super(SecondWindow, self).__init__(**kwargs)
+        self.second_panel = SecondPanel()
+        self.add_widget(self.second_panel)
+        self.second_panel._plot_init()
 
 
 class SecondPanel(Widget):
-    pass
+    plot_field = ObjectProperty(None)
+    
+    def __init__(self, **kwargs):
+        super(SecondPanel, self).__init__(**kwargs)
+        
+    def _plot_init(self):
+        self.ids.plot_field.clear_widgets()
+        plt.clf()
+        self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
+        
+    def plot_test(self):
+        self.ids.plot_field.clear_widgets()
+        plt.clf()
+        numbers = [random.randint(0, 20) for _ in range(10)]
+        plt.plot(numbers)
+        plt.ylabel('some numbers')
+        
+        self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
 
 
 class MainPanel(Widget):
     
     image = ObjectProperty(None)
     drawing_field = ObjectProperty(None)
-    
+
     def __init__(self, **kwargs):
         super(MainPanel, self).__init__(**kwargs)
+        
+        self.second_screen = SecondPanel()
+        
         self.previous_image = None
         self.pil_image = None
         
@@ -53,7 +92,7 @@ class MainPanel(Widget):
         
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
-         
+        
     def show_file_dialog(self):
         root = tk.Tk()
         root.withdraw()
@@ -187,7 +226,9 @@ class DrawingField(Widget):
 
 
 class MainApp(App):
+
     def build(self):
+
         kv = Builder.load_file("my.kv")
         self.title = 'Hadwritten digit recognition'
         return kv
