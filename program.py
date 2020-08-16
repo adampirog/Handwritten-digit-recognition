@@ -352,7 +352,7 @@ class MainApp(App):
 
     def build(self):
         kv = Builder.load_file("design.kv")
-        self.title = 'Hadwritten digit recognition'
+        self.title = 'Handwritten equation solver'
         return kv
 
 
