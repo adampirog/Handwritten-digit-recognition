@@ -297,7 +297,7 @@ def filter(image, threshold=110):
     
     
 def show_popup(result):
-    popupWindow = MyPopup(title="Analysis", size_hint=(None, None), size=(400, 300))
+    popupWindow = MyPopup()
     popupWindow.result_label.text = str(result)
     
     popupWindow.open()
