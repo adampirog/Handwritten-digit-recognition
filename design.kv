@@ -97,6 +97,7 @@ WindowManager:
 <SecondPanel>:
     plot_field: plot_field
     slider: slider
+    slider_value: slider_value
 
     BoxLayout:
         orientation: 'horizontal'
@@ -128,16 +129,19 @@ WindowManager:
                 id: slider
                 size_hint: 1, 0.1
                 pos_hint: {'center_x': .5, 'center_y': .5}
-                min: 0
+                min: 60
                 max: 200
                 value: 110
                 on_value: root.filter_and_plot(root.pil_image, self.value)
             
-            Label:
+            TextInput:
                 id: slider_value
-                size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .45}
+                multiline: False
+                size_hint: 0.15, 0.05
+                pos_hint: {'center_x': .5, 'center_y': .40}
+                font_size: self.width * 0.4
                 text: str(round(slider.value))
+                on_text_validate: root.validate_input()
 
 
             MyButton:

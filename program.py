@@ -66,6 +66,7 @@ class SecondWindow(Screen):
 class SecondPanel(Widget):
     plot_field = ObjectProperty(None)
     slider = ObjectProperty(None)
+    slider_value = ObjectProperty(None)
     
     def __init__(self, **kwargs):
         super(SecondPanel, self).__init__(**kwargs)
@@ -86,6 +87,20 @@ class SecondPanel(Widget):
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
         
         return clear_digit
+    
+    def validate_input(self):
+        
+        if(self.slider_value.text.isnumeric()):
+            value = int(self.slider_value.text)
+        else:
+            self.slider_value.text = str(self.slider.value)
+            return
+            
+        if(value >= self.slider.min and value <= self.slider.max):
+            self.slider.value = value  
+        else:
+            self.slider_value.text = str(self.slider.value)
+            return
     
     def plot_test(self):
         self.ids.plot_field.clear_widgets()
