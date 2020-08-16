@@ -55,19 +55,11 @@ WindowManager:
                 Rectangle:
                     size:  root.width * 0.35, root.height
 
-            MyButton:
-                size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .1}
-                text: "Submit"
-
-                
-                on_release:
-                    app.root.main_to_second()
 
 
             MyButton:
                 size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .7}
+                pos_hint: {'center_x': .5, 'center_y': .85}
                 text: "Load image"
 
                 on_release: 
@@ -75,12 +67,41 @@ WindowManager:
             
             MyButton:
                 size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .55}
+                pos_hint: {'center_x': .5, 'center_y': .7}
                 text: "Crop image"
 
 
                 on_release: 
                     on_release: root.crop()
+
+            GridLayout:
+                size_hint: .9, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                rows: 1
+                MyButton:
+                    size_hint: .5, 1
+                    text: "Rotate \n   left"
+                    on_release: root.rotate_left()
+
+                MyButton:
+                    size_hint: 0.5, 1
+                    text: "Rotate \n  right"
+                    on_release: root.rotate_right()
+
+            MyButton:
+                size_hint: 0.35, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .39}
+                text: "Restore"
+                on_release:
+                    root.restore()
+
+            
+            MyButton:
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .1}
+                text: "Submit"
+                on_release:
+                    app.root.main_to_second()
                 
 
 
@@ -98,6 +119,7 @@ WindowManager:
     plot_field: plot_field
     slider: slider
     slider_value: slider_value
+
 
     BoxLayout:
         orientation: 'horizontal'
@@ -121,14 +143,55 @@ WindowManager:
                     size:  root.width * 0.35, root.height
 
             Label:
+                text: "Loaded scaler"
+                bold: True
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .93}
+
+            Label:
+                id: scaler_label
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .89}
+                text: root.scaler_label
+
+
+            Label:
+                text: "Loaded model"
+                bold: True
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .81}
+
+            Label:
+                id: model_label
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .77}
+                text: root.model_label
+
+            GridLayout:
+                size_hint: .9, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .62}
+                rows: 1
+                MyButton:
+                    size_hint: .5, 1
+                    text: "Load model"
+                    on_release: root.load_model()
+
+                MyButton:
+                    size_hint: 0.5, 1
+                    text: "Load scaler"
+                    on_release: root.load_scaler()
+
+                
+
+            Label:
                 text: "Filter threshold"
                 size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .55}
+                pos_hint: {'center_x': .5, 'center_y': .48}
 
             Slider:
                 id: slider
                 size_hint: 1, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .5}
+                pos_hint: {'center_x': .5, 'center_y': .43}
                 min: 60
                 max: 200
                 value: 110
@@ -138,7 +201,7 @@ WindowManager:
                 id: slider_value
                 multiline: False
                 size_hint: 0.15, 0.05
-                pos_hint: {'center_x': .5, 'center_y': .40}
+                pos_hint: {'center_x': .5, 'center_y': .35}
                 font_size: self.width * 0.4
                 text: str(round(slider.value))
                 on_text_validate: root.validate_input()
@@ -181,7 +244,7 @@ WindowManager:
         Label:
             text:" Your result: "
             size_hint: 0.6, 0.2
-            pos_hint: {'center_x': .5, 'center_y': .8}
+            pos_hint: {'center_x': .5, 'center_y': .9}
 
         Label:
             id: result_label
@@ -191,6 +254,32 @@ WindowManager:
 
         Button:
             text: "Continue"
+            size_hint: 0.8, 0.2
+            pos_hint: {'center_x': .5, 'center_y': .2}
+            on_release: root.dismiss()
+
+<ErrorPopup>:
+    error_label: error_label
+    auto_dismiss: False
+
+    title: "An error occured"
+    title_align: "center"
+    size_hint: (None, None) 
+    size: (300, 300)
+
+    separator_height: 4
+    separator_color: 1, 0, 0, 1
+    FloatLayout:
+
+        Label:
+            id: error_label
+            text:""
+            bold: True
+            size_hint: 0.6, 0.2
+            pos_hint: {'center_x': .5, 'center_y': .7}
+
+        Button:
+            text: "OK"
             size_hint: 0.8, 0.2
             pos_hint: {'center_x': .5, 'center_y': .2}
             on_release: root.dismiss()

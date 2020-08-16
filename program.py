@@ -4,11 +4,11 @@ from kivy.core.window import Window
 
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, StringProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.config import Config
-
+import ntpath
 from kivy.uix.popup import Popup
 
 
@@ -68,10 +68,17 @@ class SecondPanel(Widget):
     slider = ObjectProperty(None)
     slider_value = ObjectProperty(None)
     
+    scaler_label = StringProperty("scaler")
+    model_label = StringProperty("forest.sav")
+    
     def __init__(self, **kwargs):
         super(SecondPanel, self).__init__(**kwargs)
-        self.model = joblib.load("models/forest.sav")
-        self.scaler = joblib.load("models/scaler")
+            
+        self.scaler_file = "models/scaler"
+        self.model_file = "models/forest.sav"
+        
+        self.model = joblib.load(self.model_file)
+        self.scaler = joblib.load(self.scaler_file)
         
         self.pil_image = None
         
@@ -115,10 +122,50 @@ class SecondPanel(Widget):
         if(self.pil_image is None):
             return
         
-        transformed = self.scaler.transform(filter(self.pil_image, self.slider.value))
-        result = self.model.predict(transformed)
-        #print(result)
-        show_popup(result)
+        try:
+            transformed = self.scaler.transform(filter(self.pil_image, self.slider.value))
+            result = self.model.predict(transformed)
+            print(self.model.predict_proba(transformed))
+            show_popup(result)
+        except Exception:
+            show_error("Model or scaler fail")
+            return
+        
+    def load_model(self):
+        file_name = show_file_dialog("Select a file", (("Sklearn", ".sav"), ("All files", "*")))
+        
+        if(file_name == () or file_name == ""):
+            return
+        
+        try:
+            self.model_file = file_name
+            self.model = joblib.load(file_name)
+            self.model_label = ntpath.basename(file_name)
+        except Exception:
+            show_error("Wrong file format")
+            return
+        
+    def load_scaler(self):
+        file_name = show_file_dialog("Select a file", [("All files", "*")])
+        
+        if(file_name == () or file_name == ""):
+            return
+        
+        try:
+            self.scaler_file = file_name
+            self.scaler = joblib.load(file_name)
+            self.scaler_label = ntpath.basename(file_name)
+        except Exception:
+            show_error("Wrong file format")
+            return
+            
+
+def show_file_dialog(title, filetypes):
+    root = tk.Tk()
+    root.withdraw()
+    file_path = filedialog.askopenfilename(title=title, filetypes=filetypes)
+        
+    return file_path
 
 
 class MainPanel(Widget):
@@ -139,13 +186,6 @@ class MainPanel(Widget):
         
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
-        
-    def show_file_dialog(self):
-        root = tk.Tk()
-        root.withdraw()
-        file_path = filedialog.askopenfilename(title="Select a file", filetypes=(("Images", ".jpg .jpeg .png"), ("All files", "*.*")))
-        
-        return file_path
          
     def get_image_position(self):
         X_POS = self.ids.image.center_x - self.ids.image.norm_image_size[0] / 2
@@ -191,7 +231,7 @@ class MainPanel(Widget):
         self.image.texture = im.texture 
         
     def load(self):
-        file_name = (self.show_file_dialog())
+        file_name = (show_file_dialog("Select a file", (("Images", ".jpg .jpeg .png"), ("All files", "*"))))
         
         if(file_name == () or file_name == ""):
             return
@@ -216,9 +256,7 @@ class MainPanel(Widget):
             self.drawing_field.selection.size[1] -= self.size_increase
         
         elif keycode[1] == 'r':
-            if(self.previous_image is not None):
-                self.pil_image = self.previous_image
-                self.display_pil_image()
+            self.restore()
         elif keycode[1] == '1':
             self.pil_image = Image.open("photos/1.jpg")
             self.previous_image = self.pil_image
@@ -240,6 +278,25 @@ class MainPanel(Widget):
             self.size_increase /= 5
         
         return True
+    
+    def restore(self):
+        if(self.previous_image is not None):
+            self.pil_image = self.previous_image
+            self.display_pil_image()
+        
+    def rotate_left(self):
+        if(self.pil_image is None):
+            return
+        
+        self.pil_image = self.pil_image.rotate(90)
+        self.display_pil_image()
+        
+    def rotate_right(self):
+        if(self.pil_image is None):
+            return
+        
+        self.pil_image = self.pil_image.rotate(-90)
+        self.display_pil_image()
         
          
 class DrawingField(Widget):
@@ -282,6 +339,13 @@ class MyPopup(Popup):
     
     def __init__(self, **kwargs):
         super(MyPopup, self).__init__(**kwargs)
+      
+        
+class ErrorPopup(Popup):
+    error_label = ObjectProperty(None)
+    
+    def __init__(self, **kwargs):
+        super(ErrorPopup, self).__init__(**kwargs)
 
 
 class MainApp(App):
@@ -316,7 +380,14 @@ def show_popup(result):
     popupWindow.result_label.text = str(result)
     
     popupWindow.open()
+  
    
+def show_error(message):
+    popupWindow = ErrorPopup()
+    popupWindow.error_label.text = str(message)
+    
+    popupWindow.open()
+    
     
 def main():
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
