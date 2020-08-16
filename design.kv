@@ -164,3 +164,26 @@ WindowManager:
     #color: 1, 1, 1, 1
     #background_color: 0.427, 0.435, 0.431, 1
     #background_normal: ' '
+
+<MyPopup>:
+    result_label: result_label
+    auto_dismiss: False
+
+    #separator_height: 1
+    FloatLayout:
+        Label:
+            text:" Your result: "
+            size_hint: 0.6, 0.2
+            pos_hint: {'center_x': .5, 'center_y': .8}
+
+        Label:
+            id: result_label
+            text:""
+            size_hint: 0.6, 0.2
+            pos_hint: {'center_x': .5, 'center_y': .7}
+
+        Button:
+            text: "Continue"
+            size_hint: 0.8, 0.2
+            pos_hint: {'center_x': .5, 'center_y': .2}
+            on_release: root.dismiss()

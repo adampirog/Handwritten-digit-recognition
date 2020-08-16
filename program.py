@@ -9,6 +9,9 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.config import Config
 
+from kivy.uix.popup import Popup
+
+
 import tkinter as tk
 from tkinter import filedialog
 
@@ -44,10 +47,6 @@ class WindowManager(ScreenManager):
         self.second_window.second_panel.pil_image = pic
         self.second_window.second_panel.filter_and_plot(pic, 110)
 
-
-class LineRectangle(Widget):
-    pass
-    
 
 class MainWindow(Screen):
     def __init__(self, **kwargs):
@@ -102,7 +101,9 @@ class SecondPanel(Widget):
             return
         
         transformed = self.scaler.transform(filter(self.pil_image, self.slider.value))
-        print(self.model.predict(transformed))
+        result = self.model.predict(transformed)
+        #print(result)
+        show_popup(result)
 
 
 class MainPanel(Widget):
@@ -257,6 +258,17 @@ class DrawingField(Widget):
         self.selection.pos[1] -= self.selection.size[1] / 2
 
 
+class LineRectangle(Widget):
+    pass
+   
+    
+class MyPopup(Popup):
+    result_label = ObjectProperty(None)
+    
+    def __init__(self, **kwargs):
+        super(MyPopup, self).__init__(**kwargs)
+
+
 class MainApp(App):
 
     def build(self):
@@ -283,6 +295,13 @@ def filter(image, threshold=110):
     
     return clean
     
+    
+def show_popup(result):
+    popupWindow = MyPopup(title="Analysis", size_hint=(None, None), size=(400, 300))
+    popupWindow.result_label.text = str(result)
+    
+    popupWindow.open()
+   
     
 def main():
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
