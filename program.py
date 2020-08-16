@@ -1,4 +1,4 @@
-#import joblib
+import joblib
 import numpy as np
 from kivy.core.window import Window
 
@@ -30,9 +30,6 @@ class WindowManager(ScreenManager):
         self.add_widget(self.main_window)
         self.add_widget(self.second_window)
         
-        #self.model = joblib.load("models/forest.sav")
-        #self.scaler = joblib.load("models/scaler")
-        
     def main_to_second(self):
         pic = self.main_window.main_panel.pil_image
         if(pic is None):
@@ -43,7 +40,9 @@ class WindowManager(ScreenManager):
         app = App.get_running_app()
         app.root.current = "second_window"
         app.root.transition.direction = 'left'
-        self.second_window.second_panel.clear_and_plot(pic)
+        self.second_window.second_panel.slider.value = 110
+        self.second_window.second_panel.pil_image = pic
+        self.second_window.second_panel.filter_and_plot(pic, 110)
 
 
 class LineRectangle(Widget):
@@ -67,21 +66,28 @@ class SecondWindow(Screen):
 
 class SecondPanel(Widget):
     plot_field = ObjectProperty(None)
+    slider = ObjectProperty(None)
     
     def __init__(self, **kwargs):
         super(SecondPanel, self).__init__(**kwargs)
+        self.model = joblib.load("models/forest.sav")
+        self.scaler = joblib.load("models/scaler")
+        
+        self.pil_image = None
         
     def _plot_init(self):
         self.ids.plot_field.clear_widgets()
         plt.clf()
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
         
-    def clear_and_plot(self, photo):
+    def filter_and_plot(self, photo, threshold):
         self.ids.plot_field.clear_widgets()
         plt.clf()
-        clear_and_plot(photo)
+        clear_digit = filter_and_plot(photo, threshold)
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
         
+        return clear_digit
+    
     def plot_test(self):
         self.ids.plot_field.clear_widgets()
         plt.clf()
@@ -90,6 +96,13 @@ class SecondPanel(Widget):
         plt.ylabel('some numbers')
         
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
+           
+    def analyze(self):
+        if(self.pil_image is None):
+            return
+        
+        transformed = self.scaler.transform(filter(self.pil_image, self.slider.value))
+        print(self.model.predict(transformed))
 
 
 class MainPanel(Widget):
@@ -127,8 +140,6 @@ class MainPanel(Widget):
     def crop(self):
         if(self.pil_image is None):
             return     
-        
-        self.previous_image = self.pil_image
     
         image_x, image_y = self.get_image_position()
         selection_x, selection_y = self.drawing_field.selection.pos[0], self.drawing_field.selection.pos[1]
@@ -170,6 +181,7 @@ class MainPanel(Widget):
             return
         
         self.pil_image = Image.open(file_name)
+        self.previous_image = self.pil_image
         self.display_pil_image()
         
     def _keyboard_closed(self):
@@ -193,9 +205,11 @@ class MainPanel(Widget):
                 self.display_pil_image()
         elif keycode[1] == '1':
             self.pil_image = Image.open("photos/1.jpg")
+            self.previous_image = self.pil_image
             self.display_pil_image()
         elif keycode[1] == '2':
             self.pil_image = Image.open("photos/2.jpg")
+            self.previous_image = self.pil_image
             self.display_pil_image()
                 
         elif keycode[1] in ['shift', 'rshift']:
@@ -251,12 +265,9 @@ class MainApp(App):
         return kv
 
 
-def clear_and_plot(image):
-  
-    small = image.convert('L').resize((28, 28))
-    np_data = np.invert(np.reshape(small, (1, 784)))
-    clean = np.where(np_data < 110, 0, np_data)
-    
+def filter_and_plot(image, threshold):
+
+    clean = filter(image, threshold)
     digit_image = clean.reshape(28, 28)
     plt.imshow(digit_image, cmap=matplotlib.cm.binary, interpolation="nearest")
     plt.axis("off")
@@ -264,6 +275,15 @@ def clear_and_plot(image):
     return clean
 
 
+def filter(image, threshold=110):
+    
+    small = image.convert('L').resize((28, 28))
+    np_data = np.invert(np.reshape(small, (1, 784)))
+    clean = np.where(np_data < threshold, 0, np_data)
+    
+    return clean
+    
+    
 def main():
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
     MainApp().run()

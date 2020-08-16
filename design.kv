@@ -96,6 +96,7 @@ WindowManager:
 
 <SecondPanel>:
     plot_field: plot_field
+    slider: slider
 
     BoxLayout:
         orientation: 'horizontal'
@@ -118,6 +119,27 @@ WindowManager:
                 Rectangle:
                     size:  root.width * 0.35, root.height
 
+            Label:
+                text: "Filter threshold"
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .55}
+
+            Slider:
+                id: slider
+                size_hint: 1, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                min: 0
+                max: 200
+                value: 110
+                on_value: root.filter_and_plot(root.pil_image, self.value)
+            
+            Label:
+                id: slider_value
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .5, 'center_y': .45}
+                text: str(round(slider.value))
+
+
             MyButton:
                 size_hint: 0.7, 0.1
                 pos_hint: {'center_x': .5, 'center_y': .2}
@@ -130,9 +152,9 @@ WindowManager:
             MyButton:
                 size_hint: 0.7, 0.1
                 pos_hint: {'center_x': .5, 'center_y': .1}
-                text: "Submit"
+                text: "Analyze"
                 
-                on_release: root.plot_test()
+                on_release: root.analyze()
 
 <MyButton@Button>:
     size: self.size
