@@ -10,6 +10,8 @@ At this state app can properly detect and recognize all handwritten numbers in a
 The result is achieved applying machine learning techniques for image analysis. This includes Random Forest and KNN classifiers using cosine metrics (~97% accuracy).
 [Model training documentation](Training_doc.pdf)
 
+Digit detection is implemented using image filtering and manipulation algorithms from OpenCV library.
+
 ## Screenshots
 
 *Credit for GUI design: Klaudia Cofalka*
@@ -19,6 +21,8 @@ The result is achieved applying machine learning techniques for image analysis. 
   ![](screenshots/1.png) | ![](screenshots/2.png)
 
   **The Analysis**
+  
+  
   ![](screenshots/3.png)
 
   
