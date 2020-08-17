@@ -40,7 +40,7 @@ WindowManager:
 
             LineRectangle:
                 id: selection
-                pos: root.width * 0.7 * 0.5 - 50, root.height * 0.5 - 50
+                pos: -100, -100#root.width * 0.7 * 0.5 - 50, root.height * 0.5 - 50
                 
                 size: (100, 100)     
                   
@@ -192,10 +192,10 @@ WindowManager:
                 id: slider
                 size_hint: 1, 0.1
                 pos_hint: {'center_x': .5, 'center_y': .43}
-                min: 60
+                min: 0
                 max: 200
-                value: 110
-                on_value: root.filter_and_plot(root.pil_image, self.value)
+                value: 75
+                on_value: root.filter_and_plot(root.cv2_image, self.value)
             
             TextInput:
                 id: slider_value

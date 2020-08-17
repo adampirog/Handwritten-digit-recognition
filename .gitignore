@@ -141,3 +141,5 @@ GUI/
 photos/
 
 Untitled.ipynb
+
+*.h5

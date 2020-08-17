@@ -3,7 +3,7 @@
 ## App state
 *The app is still under development*
 
-At this state app can properly recognize handwritten numbers
+At this state app can properly detect and recognize all handwritten numbers in a given photo.
 
 ## The algorithm
 
@@ -14,7 +14,7 @@ The result is achieved applying machine learning techniques for image analysis. 
 
 *Credit for GUI design: Klaudia Cofalka*
 
-  Selecting the image | Filtering
+  Selecting the image | Filtering and detection
   -------------  | -------------
   ![](screenshots/1.png) | ![](screenshots/2.png)
 

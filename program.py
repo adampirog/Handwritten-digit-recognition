@@ -17,12 +17,11 @@ from tkinter import filedialog
 
 from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
 import matplotlib.pyplot as plt
-import matplotlib
-import random
 
 from kivy.core.image import Image as CoreImage
 from PIL import Image
 from io import BytesIO
+import cv2
 
 
 class WindowManager(ScreenManager):
@@ -38,14 +37,16 @@ class WindowManager(ScreenManager):
         if(pic is None):
             return
         
-        self.main_window.main_panel.crop()
-        pic = self.main_window.main_panel.pil_image
+        open_cv_image = np.array(pic) 
+        # Convert RGB to BGR 
+        open_cv_image = open_cv_image[:, :, ::-1].copy() 
+        
         app = App.get_running_app()
         app.root.current = "second_window"
         app.root.transition.direction = 'left'
-        self.second_window.second_panel.slider.value = 110
-        self.second_window.second_panel.pil_image = pic
-        self.second_window.second_panel.filter_and_plot(pic, 110)
+        self.second_window.second_panel.slider.value = 75
+        self.second_window.second_panel.cv2_image = open_cv_image
+        self.second_window.second_panel.filter_and_plot(open_cv_image, 75)
 
 
 class MainWindow(Screen):
@@ -80,7 +81,8 @@ class SecondPanel(Widget):
         self.model = joblib.load(self.model_file)
         self.scaler = joblib.load(self.scaler_file)
         
-        self.pil_image = None
+        self.cv2_image = None
+        self.preprocessed_digits = None
         
     def _plot_init(self):
         self.ids.plot_field.clear_widgets()
@@ -90,10 +92,8 @@ class SecondPanel(Widget):
     def filter_and_plot(self, photo, threshold):
         self.ids.plot_field.clear_widgets()
         plt.clf()
-        clear_digit = filter_and_plot(photo, threshold)
+        self.preprocessed_digits = filter_and_plot(photo, threshold)
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
-        
-        return clear_digit
     
     def validate_input(self):
         
@@ -108,25 +108,18 @@ class SecondPanel(Widget):
         else:
             self.slider_value.text = str(self.slider.value)
             return
-    
-    def plot_test(self):
-        self.ids.plot_field.clear_widgets()
-        plt.clf()
-        numbers = [random.randint(0, 20) for _ in range(10)]
-        plt.plot(numbers)
-        plt.ylabel('some numbers')
-        
-        self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
            
     def analyze(self):
-        if(self.pil_image is None):
+        if(self.cv2_image is None):
             return
         
         try:
-            transformed = self.scaler.transform(filter(self.pil_image, self.slider.value))
-            result = self.model.predict(transformed)
-            print(self.model.predict_proba(transformed))
-            show_popup(result)
+            for digit in self.preprocessed_digits: 
+                trs1 = digit.reshape(1, 28, 28, 1)
+                trs2 = np.reshape(trs1, (1, 784))
+                trs = self.scaler.transform(trs2)
+                prediction = self.model.predict(trs)  
+                print(prediction)
         except Exception:
             show_error("Model or scaler fail")
             return
@@ -258,11 +251,11 @@ class MainPanel(Widget):
         elif keycode[1] == 'r':
             self.restore()
         elif keycode[1] == '1':
-            self.pil_image = Image.open("photos/1.jpg")
+            self.pil_image = Image.open("photos/3.jpeg")
             self.previous_image = self.pil_image
             self.display_pil_image()
         elif keycode[1] == '2':
-            self.pil_image = Image.open("photos/2.jpg")
+            self.pil_image = Image.open("photos/ms.png")
             self.previous_image = self.pil_image
             self.display_pil_image()
                 
@@ -356,23 +349,48 @@ class MainApp(App):
         return kv
 
 
-def filter_and_plot(image, threshold):
+def filter_and_plot(image, threshold, show_greyscale="Vertical"):
 
-    clean = filter(image, threshold)
-    digit_image = clean.reshape(28, 28)
-    plt.imshow(digit_image, cmap=matplotlib.cm.binary, interpolation="nearest")
+    grey = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(grey.copy(), threshold, 255, cv2.THRESH_BINARY_INV)
+    contours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    thresh_display = thresh.copy()
+    color_display = image.copy()
+    preprocessed_digits = []
+
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        
+        # Box display
+        cv2.rectangle(color_display, (x, y), (x + w, y + h), color=(0, 255, 0), thickness=2)
+        
+        digit = thresh[y:y + h, x:x + w]
+        
+        # Resizing that digit to (18, 18)
+        resized_digit = cv2.resize(digit, (18, 18))
+        
+        # Padding the digit with 5 pixels of (zeros) in each side as in MNIST
+        padded_digit = np.pad(resized_digit, ((5, 5), (5, 5)), "constant", constant_values=0)
+        
+        preprocessed_digits.append(padded_digit)
+
+    if(show_greyscale == "Horizontal"):
+        thresh_3_channel = cv2.cvtColor(thresh_display, cv2.COLOR_GRAY2BGR)
+        numpy_horizontal = np.hstack((color_display, thresh_3_channel))
+        plt.imshow(numpy_horizontal, cmap="gray")
+    elif(show_greyscale == "Vertical"):
+        thresh_3_channel = cv2.cvtColor(thresh_display, cv2.COLOR_GRAY2BGR)
+        numpy_horizontal = np.vstack((color_display, thresh_3_channel))
+        plt.imshow(numpy_horizontal, cmap="gray")  
+    else:
+        plt.imshow(color_display, cmap="gray")    
+    
+    inp = np.array(preprocessed_digits)
+    
     plt.axis("off")
     
-    return clean
-
-
-def filter(image, threshold=110):
-    
-    small = image.convert('L').resize((28, 28))
-    np_data = np.invert(np.reshape(small, (1, 784)))
-    clean = np.where(np_data < threshold, 0, np_data)
-    
-    return clean
+    return inp
     
     
 def show_popup(result):
