@@ -8,7 +8,6 @@ from kivy.properties import ObjectProperty, StringProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.config import Config
-import ntpath
 from kivy.uix.popup import Popup
 
 
@@ -37,14 +36,16 @@ class WindowManager(ScreenManager):
         if(pic is None):
             return
         
+        # Convert from Pillow to OpenCV
         open_cv_image = np.array(pic) 
-        # Convert RGB to BGR 
+        # RGB to BGR 
         open_cv_image = open_cv_image[:, :, ::-1].copy() 
         
         app = App.get_running_app()
         app.root.current = "second_window"
         app.root.transition.direction = 'left'
         self.second_window.second_panel.slider.value = 75
+        self.second_window.second_panel.switch.active = False
         self.second_window.second_panel.cv2_image = open_cv_image
         self.second_window.second_panel.filter_and_plot(open_cv_image, 75)
 
@@ -69,17 +70,21 @@ class SecondPanel(Widget):
     slider = ObjectProperty(None)
     slider_value = ObjectProperty(None)
     
-    scaler_label = StringProperty("scaler")
+    switch = ObjectProperty(None)
+    vertical_button = ObjectProperty(None)
+    horizontal_button = ObjectProperty(None)
+    
     model_label = StringProperty("forest.sav")
     
     def __init__(self, **kwargs):
         super(SecondPanel, self).__init__(**kwargs)
-            
-        self.scaler_file = "models/scaler"
-        self.model_file = "models/forest.sav"
         
-        self.model = joblib.load(self.model_file)
-        self.scaler = joblib.load(self.scaler_file)
+        try:
+            self.scaler = joblib.load("models/scaler")
+            self.model = joblib.load("models/forest.sav")
+        except Exception:
+            show_error("Error while loading model file")
+            exit()
         
         self.cv2_image = None
         self.preprocessed_digits = None
@@ -90,9 +95,19 @@ class SecondPanel(Widget):
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
         
     def filter_and_plot(self, photo, threshold):
+        show_greyscale = ""
+        if(self.switch.active):
+            if(self.vertical_button.state == "down"):
+                show_greyscale = "Vertical"
+            elif(self.horizontal_button.state == "down"):
+                show_greyscale = "Horizontal"
+        else:
+            self.vertical_button.state = "normal"
+            self.horizontal_button.state = "normal"
+            show_greyscale = "None"
         self.ids.plot_field.clear_widgets()
         plt.clf()
-        self.preprocessed_digits = filter_and_plot(photo, threshold)
+        self.preprocessed_digits = filter_and_plot(photo, threshold, show_greyscale)
         self.ids.plot_field.add_widget(FigureCanvasKivyAgg(plt.gcf()))
     
     def validate_input(self):
@@ -108,48 +123,30 @@ class SecondPanel(Widget):
         else:
             self.slider_value.text = str(self.slider.value)
             return
+        
+    def toggle_clicked(self):
+        if (self.switch.active):
+            self.filter_and_plot(self.cv2_image, self.slider.value)
+        else:
+            self.vertical_button.state = "normal"
+            self.horizontal_button.state = "normal"
            
     def analyze(self):
         if(self.cv2_image is None):
             return
         
+        result_string = ""
         try:
             for digit in self.preprocessed_digits: 
                 trs1 = digit.reshape(1, 28, 28, 1)
                 trs2 = np.reshape(trs1, (1, 784))
                 trs = self.scaler.transform(trs2)
                 prediction = self.model.predict(trs)  
-                print(prediction)
-        except Exception:
+                result_string += str(prediction[0]) + ", "
+            show_popup(result_string[:-2])
+        except Exception as e:
+            print(e)
             show_error("Model or scaler fail")
-            return
-        
-    def load_model(self):
-        file_name = show_file_dialog("Select a file", (("Sklearn", ".sav"), ("All files", "*")))
-        
-        if(file_name == () or file_name == ""):
-            return
-        
-        try:
-            self.model_file = file_name
-            self.model = joblib.load(file_name)
-            self.model_label = ntpath.basename(file_name)
-        except Exception:
-            show_error("Wrong file format")
-            return
-        
-    def load_scaler(self):
-        file_name = show_file_dialog("Select a file", [("All files", "*")])
-        
-        if(file_name == () or file_name == ""):
-            return
-        
-        try:
-            self.scaler_file = file_name
-            self.scaler = joblib.load(file_name)
-            self.scaler_label = ntpath.basename(file_name)
-        except Exception:
-            show_error("Wrong file format")
             return
             
 

@@ -120,6 +120,10 @@ WindowManager:
     slider: slider
     slider_value: slider_value
 
+    switch: switch
+    horizontal_button: horizontal_button
+    vertical_button: vertical_button
+
 
     BoxLayout:
         orientation: 'horizontal'
@@ -143,44 +147,62 @@ WindowManager:
                     size:  root.width * 0.35, root.height
 
             Label:
-                text: "Loaded scaler"
-                bold: True
-                size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .93}
-
-            Label:
-                id: scaler_label
-                size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .89}
-                text: root.scaler_label
-
-
-            Label:
                 text: "Loaded model"
                 bold: True
                 size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .81}
+                pos_hint: {'center_x': .5, 'center_y': .95}
 
             Label:
                 id: model_label
                 size_hint: 0.7, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .77}
+                pos_hint: {'center_x': .5, 'center_y': .92}
                 text: root.model_label
 
+            Switch:
+                id: switch
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .29, 'center_y': .74}
+                active: False
+                on_active: 
+                    vertical_button.state = "down"
+                    root.filter_and_plot(root.cv2_image, slider.value)
+
+
+            Label:
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .72, 'center_y': .75}
+                text: "Show binarized"
+            Label:
+                size_hint: 0.7, 0.1
+                pos_hint: {'center_x': .72, 'center_y': .72}
+                text: "image"
+
+            
+            
             GridLayout:
-                size_hint: .9, 0.1
-                pos_hint: {'center_x': .5, 'center_y': .62}
+                size_hint: .8, 0.065
+                pos_hint: {'center_x': .5, 'center_y': .63}
                 rows: 1
-                MyButton:
-                    size_hint: .5, 1
-                    text: "Load model"
-                    on_release: root.load_model()
 
-                MyButton:
+                ToggleButton:
+                    id: vertical_button
                     size_hint: 0.5, 1
-                    text: "Load scaler"
-                    on_release: root.load_scaler()
+                    text: "Vertical"
+                    group: "image_position"
+                    state: "normal"
+                    allow_no_selection: False if switch.active else True
+                    on_press: root.toggle_clicked()
+            
 
+                ToggleButton:
+                    id: horizontal_button
+                    size_hint: 0.5, 1
+                    text: "Horizontal"
+                    group: "image_position"
+                    state: "normal"
+                    allow_no_selection: False if switch.active else True
+                    on_press: root.toggle_clicked()
+                    
                 
 
             Label:
