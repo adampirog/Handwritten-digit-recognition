@@ -12,7 +12,6 @@ WindowManager:
 
     image: image
     drawing_field: drawing_field
-    crop_button: crop_button
 
     BoxLayout:
         orientation: 'horizontal'
@@ -21,7 +20,6 @@ WindowManager:
         DrawingField:
             selection: selection
             id: drawing_field
-            crop_button: crop_button
 
             size_hint: None, None
             size:  root.width * 0.7, root.height
@@ -42,7 +40,7 @@ WindowManager:
 
             LineRectangle:
                 id: selection
-                pos: -100, -100
+                pos: -100, -100#root.width * 0.7 * 0.5 - 50, root.height * 0.5 - 50
                 
                 size: (100, 100)     
                   
@@ -63,14 +61,18 @@ WindowManager:
                 size_hint: 0.7, 0.1
                 pos_hint: {'center_x': .5, 'center_y': .85}
                 text: "Load image"
-                on_release: root.load()
+
+                on_release: 
+                    on_release: root.load()
             
-            ToggleButton:
-                id: crop_button
+            MyButton:
                 size_hint: 0.7, 0.1
                 pos_hint: {'center_x': .5, 'center_y': .7}
-                text: "Crop image" if self.state == "normal" else  "Image cropping"
-                on_state: root.crop()
+                text: "Crop image"
+
+
+                on_release: 
+                    on_release: root.crop()
 
             GridLayout:
                 size_hint: .9, 0.1
