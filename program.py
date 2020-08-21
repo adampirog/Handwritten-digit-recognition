@@ -82,8 +82,8 @@ class SecondPanel(Widget):
         try:
             self.scaler = joblib.load("models/scaler")
             self.model = joblib.load("models/forest.sav")
-        except Exception:
-            show_error("Error while loading model file")
+        except Exception as e:
+            show_error("Error while loading model file \n" + e)
             exit()
         
         self.cv2_image = None
@@ -136,17 +136,21 @@ class SecondPanel(Widget):
             return
         
         result_string = ""
+        line_change = 0
         try:
-            for digit in self.preprocessed_digits: 
+            for line, x, digit in self.preprocessed_digits: 
                 trs1 = digit.reshape(1, 28, 28, 1)
                 trs2 = np.reshape(trs1, (1, 784))
                 trs = self.scaler.transform(trs2)
-                prediction = self.model.predict(trs)  
+                prediction = self.model.predict(trs)
+                if(line > line_change):
+                    result_string = result_string[:-2]
+                    line_change += 1
+                    result_string += "\n"
                 result_string += str(prediction[0]) + ", "
             show_popup(result_string[:-2])
         except Exception as e:
-            print(e)
-            show_error("Model or scaler fail")
+            show_error("Model or scaler fail \n" + e)
             return
             
 
@@ -248,11 +252,27 @@ class MainPanel(Widget):
         elif keycode[1] == 'r':
             self.restore()
         elif keycode[1] == '1':
-            self.pil_image = Image.open("photos/3.jpeg")
+            self.pil_image = Image.open("photos/1.png")
             self.previous_image = self.pil_image
             self.display_pil_image()
         elif keycode[1] == '2':
-            self.pil_image = Image.open("photos/ms.png")
+            self.pil_image = Image.open("photos/2.png")
+            self.previous_image = self.pil_image
+            self.display_pil_image()
+        elif keycode[1] == '3':
+            self.pil_image = Image.open("photos/3.png")
+            self.previous_image = self.pil_image
+            self.display_pil_image()
+        elif keycode[1] == '4':
+            self.pil_image = Image.open("photos/4.png")
+            self.previous_image = self.pil_image
+            self.display_pil_image()
+        elif keycode[1] == '5':
+            self.pil_image = Image.open("photos/5.png")
+            self.previous_image = self.pil_image
+            self.display_pil_image()
+        elif keycode[1] == '6':
+            self.pil_image = Image.open("photos/6.png")
             self.previous_image = self.pil_image
             self.display_pil_image()
                 
@@ -354,11 +374,13 @@ def filter_and_plot(image, threshold, show_greyscale="Vertical"):
 
     thresh_display = thresh.copy()
     color_display = image.copy()
+    
     preprocessed_digits = []
-
+    lines = []
+    
     for c in contours:
         x, y, w, h = cv2.boundingRect(c)
-        
+
         # Box display
         cv2.rectangle(color_display, (x, y), (x + w, y + h), color=(0, 255, 0), thickness=2)
         
@@ -370,7 +392,33 @@ def filter_and_plot(image, threshold, show_greyscale="Vertical"):
         # Padding the digit with 5 pixels of (zeros) in each side as in MNIST
         padded_digit = np.pad(resized_digit, ((5, 5), (5, 5)), "constant", constant_values=0)
         
-        preprocessed_digits.append(padded_digit)
+        preprocessed_digits.append((x, y, w, h, padded_digit))
+          
+    # finding line splits    
+    for x, y, w, h, _ in preprocessed_digits:
+        collision = False
+        for xl, yl, wl, hl, _ in preprocessed_digits:
+            if(y + h < yl + hl and y + h > yl + hl * 0.25):
+                collision = True
+                break
+        if (y + h not in lines and collision is False):
+            lines.append(y + h)
+                        
+    for line in lines:
+        cv2.line(color_display, (-5, line), (999999, line), (0, 0, 255), 2)
+        
+    result = []
+    # assigning lines to digits
+    for x, y, w, h, digit in preprocessed_digits:
+        min_distance = 999999
+        min_line = 0
+        for index, line in enumerate(lines):
+            if (line - (y + h) >= 0) and (line - (y + h) < min_distance):
+                min_distance = (line - y)
+                min_line = index
+        result.append((len(lines) - min_line - 1, x, digit))
+            
+    result.sort(key=lambda x: (x[0], x[1]))
 
     if(show_greyscale == "Horizontal"):
         thresh_3_channel = cv2.cvtColor(thresh_display, cv2.COLOR_GRAY2BGR)
@@ -383,11 +431,9 @@ def filter_and_plot(image, threshold, show_greyscale="Vertical"):
     else:
         plt.imshow(color_display, cmap="gray")    
     
-    inp = np.array(preprocessed_digits)
-    
     plt.axis("off")
     
-    return inp
+    return result
     
     
 def show_popup(result):
