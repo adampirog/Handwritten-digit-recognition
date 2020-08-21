@@ -1,26 +1,24 @@
+import cv2
 import joblib
 import numpy as np
-from kivy.core.window import Window
+from PIL import Image
+from io import BytesIO
+import matplotlib.pyplot as plt
+
 
 from kivy.app import App
-from kivy.uix.widget import Widget
-from kivy.properties import ObjectProperty, StringProperty
 from kivy.lang import Builder
-from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.config import Config
 from kivy.uix.popup import Popup
-
+from kivy.uix.widget import Widget
+from kivy.core.window import Window
+from kivy.core.image import Image as CoreImage
+from kivy.properties import ObjectProperty, StringProperty
+from kivy.uix.screenmanager import Screen, ScreenManager
+from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
 
 import tkinter as tk
 from tkinter import filedialog
-
-from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
-import matplotlib.pyplot as plt
-
-from kivy.core.image import Image as CoreImage
-from PIL import Image
-from io import BytesIO
-import cv2
 
 
 class WindowManager(ScreenManager):
@@ -180,6 +178,8 @@ class MainPanel(Widget):
         
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
+        
+        self.is_cropping = False
          
     def get_image_position(self):
         X_POS = self.ids.image.center_x - self.ids.image.norm_image_size[0] / 2
@@ -189,8 +189,17 @@ class MainPanel(Widget):
               
     def crop(self):
         if(self.pil_image is None):
-            return     
-    
+            self.drawing_field.crop_button.state = "normal"
+            return 
+        if (self.drawing_field.crop_button.state == "down"):
+            width, height = Window.size
+            self.drawing_field.selection.pos[0] = width * 0.7 * 0.5 - 50
+            self.drawing_field.selection.pos[1] = height * 0.5 - 50
+            
+            self.drawing_field.selection.size[0] = 100
+            self.drawing_field.selection.size[1] = 100
+            return
+            
         image_x, image_y = self.get_image_position()
         selection_x, selection_y = self.drawing_field.selection.pos[0], self.drawing_field.selection.pos[1]
         selection_size_x, selection_size_y = self.drawing_field.selection.size[0], self.drawing_field.selection.size[1]
@@ -212,10 +221,11 @@ class MainPanel(Widget):
         
         self.display_pil_image()
         
-        selection_x, selection_y = self.get_image_position()
-        self.drawing_field.selection.pos = (selection_x, selection_y)
-        self.drawing_field.selection.size[0] = self.ids.image.norm_image_size[0] 
-        self.drawing_field.selection.size[1] = self.ids.image.norm_image_size[1] 
+        self.drawing_field.selection.size[0] = -1
+        self.drawing_field.selection.size[1] = -1
+        self.drawing_field.selection.pos[0] = -500
+        self.drawing_field.selection.pos[1] = -500
+        self.drawing_field.crop_button.state == "normal"
            
     def display_pil_image(self):
         data = BytesIO()
@@ -312,7 +322,8 @@ class MainPanel(Widget):
 class DrawingField(Widget):
     
     selection = ObjectProperty(None)
-    
+    crop_button = ObjectProperty(None)
+
     def __init__(self, **kwargs):
         super(DrawingField, self).__init__(**kwargs)
         
@@ -320,7 +331,9 @@ class DrawingField(Widget):
         self.size_increase = 5
 
     def on_touch_down(self, touch):
-         
+        if(self.crop_button.state == "normal"):
+            return
+        
         self.selection.pos = touch.pos
         self.selection.pos[0] -= self.selection.size[0] / 2
         self.selection.pos[1] -= self.selection.size[1] / 2
@@ -334,6 +347,8 @@ class DrawingField(Widget):
             self.selection.size[1] += self.size_increase
         
     def on_touch_move(self, touch):
+        if(self.crop_button.state == "normal"):
+            return
         
         self.selection.pos = touch.pos
         self.selection.pos[0] -= self.selection.size[0] / 2
