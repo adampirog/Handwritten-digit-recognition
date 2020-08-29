@@ -3,6 +3,7 @@ import joblib
 import numpy as np
 from PIL import Image
 from io import BytesIO
+from tensorflow import keras
 import matplotlib.pyplot as plt
 
 
@@ -72,16 +73,16 @@ class SecondPanel(Widget):
     vertical_button = ObjectProperty(None)
     horizontal_button = ObjectProperty(None)
     
-    model_label = StringProperty("forest.sav")
+    model_label = StringProperty("NeuralNetwork.h5")
     
     def __init__(self, **kwargs):
         super(SecondPanel, self).__init__(**kwargs)
         
         try:
-            self.scaler = joblib.load("models/scaler")
-            self.model = joblib.load("models/forest.sav")
+            self.model = keras.models.load_model("models/NeuralNetwork.h5")
+            #self.model = joblib.load("models/ForestClassifier.sav")
         except Exception as e:
-            show_error("Error while loading model file \n" + e)
+            show_error("Error while loading model \n" + e)
             exit()
         
         self.cv2_image = None
@@ -137,15 +138,13 @@ class SecondPanel(Widget):
         line_change = 0
         try:
             for line, x, digit in self.preprocessed_digits: 
-                trs1 = digit.reshape(1, 28, 28, 1)
-                trs2 = np.reshape(trs1, (1, 784))
-                trs = self.scaler.transform(trs2)
-                prediction = self.model.predict(trs)
+                trs = digit.reshape(1, 28, 28, 1)
+                prediction = np.argmax(self.model.predict(trs))
                 if(line > line_change):
                     result_string = result_string[:-2]
                     line_change += 1
                     result_string += "\n"
-                result_string += str(prediction[0]) + ", "
+                result_string += str(prediction) + ", "
             show_popup(result_string[:-2])
         except Exception as e:
             show_error("Model or scaler fail \n" + e)
@@ -465,9 +464,23 @@ def show_error(message):
     popupWindow.open()
     
     
+class sk_wrapper():
+    def __init__(self, model, scaler):
+        self.model = joblib.load(model)
+        self.scaler = joblib.load(scaler)
+    
+    def predict(self, image):
+        trs = np.reshape(image, (1, 784))
+        trs2 = self.scaler.transform(trs)
+        
+        return self.model.predict_proba(trs2)
+    
+    
 def main():
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
     MainApp().run()
+    #combo_model = sk_wrapper("models/forest.sav", "models/scaler")
+    #joblib.dump(combo_model, "ForestClassifier.sav")
     
 
 if __name__ == "__main__":  

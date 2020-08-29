@@ -143,3 +143,5 @@ Untitled.ipynb
 *.h5
 
 models/
+
+*.ipynb
