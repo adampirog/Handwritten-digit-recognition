@@ -7,14 +7,12 @@ At this state app can properly detect and recognize all handwritten numbers in a
 
 ## The algorithm
 
-The result is achieved applying machine learning techniques for image analysis. This includes Random Forest and KNN classifiers using cosine metrics (~97% accuracy).
+The result is achieved applying machine learning techniques for image analysis, including Convolutional Neural Networks (CNN).
 [Model training documentation](Training_doc.pdf)
 
 Digit detection is implemented using image filtering and manipulation algorithms from OpenCV library.
 
 ## Screenshots
-
-*Credit for GUI design: Klaudia Cofalka*
 
   Selecting the image | Filtering and detection
   -------------  | -------------
